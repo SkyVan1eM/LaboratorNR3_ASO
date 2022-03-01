@@ -4,14 +4,13 @@ import java.util.ArrayList;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
+
 
 public class Main {
-    static ArrayList  <Thread> arrayThread = new ArrayList<>();
-    static CyclicBarrier barrier = new CyclicBarrier(3);
-    static CyclicBarrier barrier2 = new CyclicBarrier(3);
-    static Semaphore semaphore = new Semaphore(1);
+    static ArrayList<Integer> numImpare = new ArrayList<>();
+    static CyclicBarrier barrier = new CyclicBarrier(2);
+    static CyclicBarrier barrier2 = new CyclicBarrier(2);
+    static Semaphore semaphore = new Semaphore(2);
     static Dep depozit = new Dep();
     static Producer producer = new Producer(depozit, barrier, semaphore, barrier2);
     static Consumer consumer = new Consumer(depozit, barrier, semaphore);
@@ -21,15 +20,26 @@ public class Main {
     static Thread consumator1 = new Thread(consumer, "Consumator - 1 ");
     static Thread consumator2 = new Thread(consumer, "Consumator - 2 ");
     static Thread consumator3 = new Thread(consumer, "Consumator - 3 ");
+    static int product ;
 
-    public static void main(String[] args) {
+    static public void addArrayOFnumber(){
+        for (int i = 1; i < 81; i++ ){
+            if( i % 2 != 0){
+                numImpare.add(i);
+            }
+        }
+    }
+    public static void main(String[] args) throws InterruptedException {
+        addArrayOFnumber();
 
+        Thread.sleep(100);
         producator1.start();
         producator2.start();
         producator3.start();
         consumator1.start();
         consumator2.start();
         consumator3.start();
+
 
     }
 
@@ -55,6 +65,7 @@ public class Main {
         }
     }
 
+
     static class Producer extends Thread {
         CyclicBarrier barrier;
         CyclicBarrier barrier2;
@@ -69,43 +80,43 @@ public class Main {
         }
 
         public void run() {
-            int i = 0;
-            try {
 
-                //System.out.println(Thread.currentThread().getName() + " asteapta randul!");
-                while (CountProd.getCount() < 56) {
-                    if (CountProd.getCount() == 55) {
-                        break;
-                    }
-                    if (!(Dep.dep.size() == 0 )) {
+            while(CountProd.getCount() < 42) {
 
-                        System.out.println("In depozit sunt produse,asteptam!");
-                        barrier.await();
-
-                    } else {
-                        barrier2.await();
-                        if(!(Dep.dep.size() == 2)) {
-                            if (!(i % 2 == 0)) {
-                                dep.put(i);
-
-                                System.out.println("Sau produs " + CountProd.getCount() + " elemente");
-                            }
-                     i++;
-                            arrayThread.add(Thread.currentThread());
-                            if (arrayThread.size() == 3) {
-                                System.out.println(Dep.dep);
-                                arrayThread.clear();
-                            }
-                            System.out.println(Thread.currentThread().getName() + " asteapta sa finalizeze restul producatorilor");
-                        }
-                    }
-
+                if(CountProd.getCount() == 41) {
+                    System.out.println(CountProd.getCount() + "sau produs");
+                    break;
                 }
-            } catch (InterruptedException | BrokenBarrierException e) {
-                e.printStackTrace();
+                try {
+                    semaphore.acquire();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if (Dep.dep.size() == 0) {
+                    System.out.println("Dep is empty " + Dep.dep );
+                }
+
+                try {
+                    System.out.println(numImpare);
+
+                            dep.put(numImpare.get(0));
+                            numImpare.remove(0);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        System.out.println(Thread.currentThread().getName() + " put the product : " + Dep.dep.get(0));
+
+                    semaphore.release();
+                    try {
+                        System.out.println(Thread.currentThread().getName() + " wait for the products to be consumed");
+                        barrier.await();
+                    } catch (InterruptedException | BrokenBarrierException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
-    }
+
 
     static class Consumer extends Thread {
         CyclicBarrier barrier;
@@ -119,63 +130,52 @@ public class Main {
         }
 
         public void run() {
-            try {
-                semaphore.acquire();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println("///PUT---> START"+ Thread.currentThread().getName());
-            while (CountProd.getCountConsum() < 56) {
-                if (CountProd.getCount() == 55) {
+            while (CountProd.getCountConsum() < 41){
+
+                if(CountProd.getCountConsum() == 40){
+                    System.out.println("sau consumat " + CountProd.getCountConsum() + " " + CountProd.getCount());
                     break;
                 }
                 try {
-                    System.out.println(Dep.dep.size());
-                    if (Dep.dep.size() == 0) {
-
-                        System.out.println("Asteptam umplirea depozitului!");
-                        semaphore.release();
-                        barrier.await();
-                    } else {
-                        dep.get();
-                    }
-                } catch (InterruptedException | BrokenBarrierException e) {
+                    semaphore.acquire();
+                } catch (InterruptedException e) {
                     e.printStackTrace();
-                }finally {
-                    semaphore.release();
                 }
-                System.out.println("///PUT---> STOP"+ Thread.currentThread().getName());
+                if(Dep.dep.size() >= 1){
+
+                    try {
+                        dep.get();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(Thread.currentThread().getName() + "get the product: " + product);
+                    CountProd.countConsum();
+                    semaphore.release();
+                }else{
+                    try {
+                        barrier.await();
+                    } catch (InterruptedException | BrokenBarrierException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }
 
-    static class Dep {
+    static class Dep extends Thread {
         static ArrayList<Integer> dep = new ArrayList<>();
-        ReentrantLock locker;
-        Condition condition;
-
-        Dep() {
-            locker = new ReentrantLock();
-            condition = locker.newCondition();
-        }
 
         public void get() throws InterruptedException {
-            System.out.println("GET---> START"+ Thread.currentThread().getName());
-            System.out.println(Thread.currentThread().getName() + " vrea un produs!");
-            System.out.println("Produsele in depozit: " + dep);
-            System.out.println(Thread.currentThread().getName() + " a luat un produsul " + dep.get(0));
+            sleep(400);
             dep.remove(0);
-            System.out.println("Produce in depozit: " + dep);
             CountProd.countConsum();
-            System.out.println("Sau consumat " + CountProd.getCount() + " elemente");
-            System.out.println("GET---> STOP" + Thread.currentThread().getName());
+
         }
 
-        public void put(int i) {
+        public void put(int i) throws InterruptedException {
             dep.add(i);
+            product = i;
             CountProd.count();
-            System.out.println(Thread.currentThread().getName() + " a produs produsul: " + i);
-
         }
     }
 }
