@@ -29,7 +29,7 @@ public class Main {
         }
     }
 
-    public static void main(String[] args)  {
+    public static void main(String[] args) throws InterruptedException {
         addArrayOFnumber();
         producator1.start();
         producator2.start();
@@ -39,7 +39,8 @@ public class Main {
         consumator3.start();
 
         while (true){
-            if (CountProd.getCount() == 10 && CountProd.getCountConsum() == 10) {
+            Thread.sleep(1000);
+            if (CountProd.getCount() == 40 && CountProd.getCountConsum() == 40) {
                 System.out.println("Well done!");
                 System.out.println("Sau produs :" + CountProd.getCount() + " produse!");
                 System.out.println("Sau conumat :" + CountProd.getCountConsum() + " produse!");
@@ -86,10 +87,9 @@ public class Main {
         }
 
         public void run() {
-            while (CountProd.getCount() <11) {
-                if (CountProd.getCount() == 10) {
+            while (CountProd.getCount() <41) {
+                if (CountProd.getCount() == 40) {
                     System.out.println(Thread.currentThread().getName() + " pe azi gata!");
-
                     barrier.reset();
                     break;
                 }
@@ -149,8 +149,8 @@ public class Main {
 
         @Override
         public void run() {
-            while (CountProd.getCountConsum() < 11) {
-                if (CountProd.getCountConsum() == 10) {
+            while (CountProd.getCountConsum() < 41) {
+                if (CountProd.getCountConsum() == 40) {
                     System.out.println(Thread.currentThread().getName() + " pe azi gata!");
                    barrier.reset();
                     break;
