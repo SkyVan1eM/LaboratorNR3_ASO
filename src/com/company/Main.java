@@ -38,7 +38,7 @@ public class Main {
         consumator2.start();
         consumator3.start();
 
-        while (true){
+        while (true) {
             Thread.sleep(1000);
             if (CountProd.getCount() == 40 && CountProd.getCountConsum() == 40) {
                 System.out.println("Well done!");
@@ -87,7 +87,7 @@ public class Main {
         }
 
         public void run() {
-            while (CountProd.getCount() <41) {
+            while (CountProd.getCount() < 41) {
                 if (CountProd.getCount() == 40) {
                     System.out.println(Thread.currentThread().getName() + " pe azi gata!");
                     barrier.reset();
@@ -95,39 +95,36 @@ public class Main {
                 }
                 locker.lock();
 
-                if (!depStatus) {
-                    if (Dep.dep.size() == 2) {
-                        depStatus = true;
-                        System.out.println(Thread.currentThread().getName() + " Ups! Dep is FULL!");
+                try {
+                    if (!depStatus) {
+                        if (Dep.dep.size() == 2) {
+                            depStatus = true;
+                            System.out.println(Thread.currentThread().getName() + " Ups! Dep is FULL!");
 
-                        try {
-                            barrier.await();
-                        } catch (InterruptedException | BrokenBarrierException e) {
-                            e.printStackTrace();
+                                barrier.await();
+
+                            locker.unlock();
+
+                        } else {
+
+                            System.out.println(Thread.currentThread().getName() + " a produs : " + numImpare.get(0));
+                            dep.put(numImpare.get(0));
+                            CountProd.count();
+                            System.out.println(CountProd.getCount() + " sau produs");
+                            locker.unlock();
+
+                                barrier.await();
+
                         }
-                        locker.unlock();
-
                     } else {
 
-                        System.out.println(Thread.currentThread().getName() + " a produs : " + numImpare.get(0));
-                        dep.put(numImpare.get(0));
-                        CountProd.count();
-                        System.out.println(CountProd.getCount() + " sau produs");
-                        locker.unlock();
-                        try {
+                            locker.unlock();
+                            System.out.println(Thread.currentThread().getName() + " asteapta consumarea dep!");
                             barrier.await();
-                        } catch (InterruptedException | BrokenBarrierException e) {
-                            e.printStackTrace();
-                        }
+
                     }
-                } else {
-                    try {
-                        locker.unlock();
-                        System.out.println(Thread.currentThread().getName() + " asteapta consumarea dep!");
-                        barrier.await();
-                    } catch (InterruptedException | BrokenBarrierException e) {
-                        e.printStackTrace();
-                    }
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    barrier.reset();
                 }
             }
         }
@@ -152,41 +149,38 @@ public class Main {
             while (CountProd.getCountConsum() < 41) {
                 if (CountProd.getCountConsum() == 40) {
                     System.out.println(Thread.currentThread().getName() + " pe azi gata!");
-                   barrier.reset();
+                    barrier.reset();
                     break;
                 }
                 locker.lock();
-                if (depStatus) {
-                    if (Dep.dep.size() == 0) {
-                        depStatus = false;
-                        System.out.println(Thread.currentThread().getName() + " Ups! Dep is empty!");
-                        try {
-                            barrier.await();
-                        } catch (InterruptedException | BrokenBarrierException e) {
-                            barrier.reset();
-                        }
-                        locker.unlock();
+                try {
+                    if (depStatus) {
+                        if (Dep.dep.size() == 0) {
 
-                    } else {
-                        System.out.println(Thread.currentThread().getName() + " a consumat : " + Dep.dep.get(0));
-                        dep.get();
-                        CountProd.countConsum();
-                        System.out.println(CountProd.getCountConsum() + " sau consumat");
-                        locker.unlock();
-                        try {
+                            depStatus = false;
+                            System.out.println(Thread.currentThread().getName() + " Ups! Dep is empty!");
                             barrier.await();
-                        } catch (InterruptedException | BrokenBarrierException e) {
-                            barrier.reset();
+                            locker.unlock();
+
+                        } else {
+
+                            System.out.println(Thread.currentThread().getName() + " a consumat : " + Dep.dep.get(0));
+                            dep.get();
+                            CountProd.countConsum();
+                            System.out.println(CountProd.getCountConsum() + " sau consumat");
+                            locker.unlock();
+                            barrier.await();
+
                         }
-                    }
-                } else {
-                    try {
+                    } else {
+
                         locker.unlock();
                         System.out.println(Thread.currentThread().getName() + " asteapta umplirea dep!");
                         barrier.await();
-                    } catch (InterruptedException | BrokenBarrierException e) {
-                        barrier.reset();
+
                     }
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    barrier.reset();
                 }
             }
         }
