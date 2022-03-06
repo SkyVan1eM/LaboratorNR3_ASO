@@ -29,7 +29,7 @@ public class Main {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)  {
         addArrayOFnumber();
         producator1.start();
         producator2.start();
@@ -37,6 +37,15 @@ public class Main {
         consumator1.start();
         consumator2.start();
         consumator3.start();
+
+        while (true){
+            if (CountProd.getCount() == 10 && CountProd.getCountConsum() == 10) {
+                System.out.println("Well done!");
+                System.out.println("Sau produs :" + CountProd.getCount() + " produse!");
+                System.out.println("Sau conumat :" + CountProd.getCountConsum() + " produse!");
+                break;
+            }
+        }
 
     }
 
@@ -79,12 +88,9 @@ public class Main {
         public void run() {
             while (CountProd.getCount() <11) {
                 if (CountProd.getCount() == 10) {
-                    System.out.println("Well done! Au fost produse: " + CountProd.getCount() + " de produse!");
-                    try {
-                        barrier.await();
-                    } catch (InterruptedException | BrokenBarrierException e) {
-                        e.printStackTrace();
-                    }
+                    System.out.println(Thread.currentThread().getName() + " pe azi gata!");
+
+                    barrier.reset();
                     break;
                 }
                 locker.lock();
@@ -145,12 +151,8 @@ public class Main {
         public void run() {
             while (CountProd.getCountConsum() < 11) {
                 if (CountProd.getCountConsum() == 10) {
-                    System.out.println("Well done! Au fost consumate: " + CountProd.getCountConsum() + " de produse!");
-                    try {
-                        barrier.await();
-                    } catch (InterruptedException | BrokenBarrierException e) {
-                        e.printStackTrace();
-                    }
+                    System.out.println(Thread.currentThread().getName() + " pe azi gata!");
+                   barrier.reset();
                     break;
                 }
                 locker.lock();
@@ -161,7 +163,7 @@ public class Main {
                         try {
                             barrier.await();
                         } catch (InterruptedException | BrokenBarrierException e) {
-                            e.printStackTrace();
+                            barrier.reset();
                         }
                         locker.unlock();
 
@@ -174,7 +176,7 @@ public class Main {
                         try {
                             barrier.await();
                         } catch (InterruptedException | BrokenBarrierException e) {
-                            e.printStackTrace();
+                            barrier.reset();
                         }
                     }
                 } else {
@@ -183,7 +185,7 @@ public class Main {
                         System.out.println(Thread.currentThread().getName() + " asteapta umplirea dep!");
                         barrier.await();
                     } catch (InterruptedException | BrokenBarrierException e) {
-                        e.printStackTrace();
+                        barrier.reset();
                     }
                 }
             }
